@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BKP SYSTEM | ครัวกลาง BKP Partnership</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0a0f1e;--sf:#111827;--sf2:#1a2234;--bd:#1e2d45;--bd2:#2a3f60;--ac:#6366f1;--ac2:#818cf8;--ok:#10b981;--ng:#ef4444;--wn:#f59e0b;--tx:#e8edf5;--mu:#64748b;--dm:#334155}
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;overflow:hidden}
+body{font-family:'IBM Plex Sans Thai',sans-serif;background:var(--bg);color:var(--tx);display:flex;font-size:14px}
+.sb{width:210px;background:var(--sf);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0}
+.sb-logo{padding:18px 16px 14px;border-bottom:1px solid var(--bd)}
+.brand{font-size:15px;font-weight:700;color:#fff}.brand-s{font-size:10px;color:var(--mu);margin-top:3px;font-family:'IBM Plex Mono',monospace}
+.sb-nav{flex:1;overflow-y:auto;padding:6px 0}
+.nsec{font-size:9px;color:#2d3f55;text-transform:uppercase;letter-spacing:1.2px;padding:10px 14px 4px;font-family:'IBM Plex Mono',monospace}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 14px;cursor:pointer;font-size:13px;color:var(--mu);border-right:2px solid transparent;transition:all .15s}
+.ni:hover{background:rgba(99,102,241,.08);color:var(--tx)}.ni.on{background:rgba(99,102,241,.13);color:var(--ac2);border-right-color:var(--ac)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:var(--sf);border-bottom:1px solid var(--bd);padding:11px 22px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar h1{font-size:15px;font-weight:600;color:#fff}
+.tr{display:flex;align-items:center;gap:10px}
+.tdate{font-size:11px;color:var(--mu);background:var(--sf2);border:1px solid var(--bd);padding:4px 11px;border-radius:20px;font-family:'IBM Plex Mono',monospace}
+.sd{width:7px;height:7px;border-radius:50%;background:#34d399;transition:all .3s}.sd.syn{background:var(--wn);animation:bk 1s infinite}.sd.err{background:var(--ng)}
+@keyframes bk{50%{opacity:.2}}
+.ct{flex:1;overflow-y:auto;padding:20px}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:18px;margin-bottom:14px}
+.ctit{font-size:13px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.mg4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.mc{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px 16px}
+.mc label{font-size:10px;color:var(--mu);display:block;margin-bottom:6px}
+.mc .val{font-size:20px;font-weight:700;color:#fff;line-height:1}.mc .sub{font-size:10px;color:var(--mu);margin-top:4px}
+.btn{padding:8px 16px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:500;font-family:'IBM Plex Sans Thai',sans-serif;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-p{background:var(--ac);color:#fff}.btn-p:hover:not(:disabled){background:var(--ac2)}
+.btn-s{background:var(--ok);color:#fff}.btn-d{background:var(--ng);color:#fff}
+.btn-o{background:transparent;border:1px solid var(--bd2);color:var(--mu)}.btn-o:hover:not(:disabled){background:var(--sf2);color:var(--tx)}
+.btn-sm{padding:5px 11px;font-size:11px}
+input,select,textarea{width:100%;padding:8px 11px;border:1px solid var(--bd);border-radius:7px;font-size:13px;font-family:'IBM Plex Sans Thai',sans-serif;background:var(--bg);color:var(--tx);outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--ac)}
+input[type=number]{-moz-appearance:textfield}input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.6)}
+label.fl{font-size:11px;color:var(--mu);display:block;margin-bottom:5px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}.fg{margin-bottom:12px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 12px;color:var(--mu);font-weight:500;border-bottom:1px solid var(--bd);font-size:10px;text-transform:uppercase;letter-spacing:.4px}
+td{padding:11px 12px;border-bottom:1px solid rgba(30,45,69,.5);vertical-align:middle}
+tr:last-child td{border-bottom:none}tr:hover td{background:rgba(99,102,241,.04)}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.bg{background:rgba(16,185,129,.15);color:#34d399}.br{background:rgba(239,68,68,.15);color:#f87171}
+.pitem{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--bg);border-radius:8px;margin-bottom:7px;border:1px solid var(--bd)}
+.qi{display:flex;align-items:center;gap:5px}.qi input{width:70px;text-align:center;padding:6px 8px}
+.qb{width:28px;height:28px;border-radius:5px;border:1px solid var(--bd2);background:var(--sf2);color:var(--tx);cursor:pointer;font-size:15px;display:inline-flex;align-items:center;justify-content:center}
+.qb:hover{background:var(--dm)}
+.totrow{background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.25);border-radius:8px;padding:13px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.totamt{font-size:22px;font-weight:700;color:var(--ac2)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;flex-shrink:0}
+.sh{background:linear-gradient(135deg,#312e81,#1e3a5f);border-radius:14px;padding:28px;text-align:center;border:1px solid #4338ca}
+.sh h4{font-size:10px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.sh-kg{font-size:44px;font-weight:800;color:#fff;line-height:1}
+.sh-pay{font-size:26px;font-weight:700;color:#a5b4fc;margin-top:8px}
+.mmg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.mcard{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:18px}
+.mcard.warn{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.04)}
+.mpct{font-size:38px;font-weight:800;line-height:1;color:var(--ok)}.mcard.warn .mpct{color:#f87171}
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.scard{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.g21{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+.loading{display:flex;align-items:center;justify-content:center;padding:50px;color:var(--mu);gap:10px;font-size:13px}
+.spin{width:18px;height:18px;border:2px solid var(--dm);border-top-color:var(--ac);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:24px;right:24px;background:#22c55e;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;transform:translateY(80px);transition:transform .3s;pointer-events:none}
+.toast.show{transform:translateY(0)}.toast.err{background:var(--ng)}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--dm);border-radius:3px}
+@media(max-width:860px){.mg4{grid-template-columns:1fr 1fr}.mmg{grid-template-columns:1fr 1fr}.sgrid{grid-template-columns:1fr 1fr}.g21{grid-template-columns:1fr}}
+@media print{.sb,.topbar{display:none!important}.ct{overflow:visible;padding:0}}
+</style>
+</head>
+<body>
+<nav class="sb">
+  <div class="sb-logo"><div class="brand">⚡ BKP SYSTEM</div><div class="brand-s">ครัวกลาง BKP Partnership</div></div>
+  <div class="sb-nav" id="nav"></div>
+</nav>
+<div class="main">
+  <header class="topbar">
+    <h1 id="ptitle">ภาพรวมธุรกิจ</h1>
+    <div class="tr"><div class="sd" id="sd"></div><div class="tdate" id="tdate"></div></div>
+  </header>
+  <main class="ct" id="ct"><div class="loading"><div class="spin"></div>กำลังเชื่อมต่อฐานข้อมูล...</div></main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const {createClient}=supabase;
+const SB=createClient(
+  'https://suatxkfygvlrlsscvmoo.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1YXR4a2Z5Z3Zscmxzc2N2bW9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNzM5MjIsImV4cCI6MjA4OTc0OTkyMn0.5yBBvcYRGbrcnAftTuT08_Os3ouwSmnPiixCuOxRODA'
+);
+let C={products:[],shareholders:[],overhead:{labor:15,accounting:8,electricity:1,cleaning:0,depreciation:2,gas:4,alert_pct:15},sales:[],saleItems:[],expenses:[]};
+let pg='dash',ch=null;
+let F={hf:'all',sf:ago(60),st:td(),shf:ago(365),sht:td(),stf:ago(60),stt:td()};
+function td(){return new Date().toISOString().slice(0,10)}
+function ago(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10)}
+function fmt(n){return '฿'+Math.round(n||0).toLocaleString('th-TH')}
+function fmtD(n){return '฿'+(+(n||0)).toFixed(2)}
+function fdate(d){return new Date(d+'T00:00:00').toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'})}
+function ohS(){const o=C.overhead;return(+o.labor||0)+(+o.accounting||0)+(+o.electricity||0)+(+o.cleaning||0)+(+o.depreciation||0)+(+o.gas||0)}
+function gp(id){return C.products.find(p=>p.id===+id)}
+function syn(on){const d=document.getElementById('sd');if(d)d.className='sd'+(on?' syn':'')}
+function serr(){const d=document.getElementById('sd');if(d)d.className='sd err'}
+function toast(m,e=false){const t=document.getElementById('toast');t.textContent=m;t.className='toast'+(e?' err':'');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)}
+function inR(f,t){return C.sales.filter(s=>s.sale_date>=f&&s.sale_date<=t).map(s=>({...s,items:C.saleItems.filter(i=>i.sale_id===s.id)}))}
+function sKg(ss){return ss.reduce((a,s)=>a+s.items.reduce((b,i)=>b+parseFloat(i.qty||0),0),0)}
+function sTot(ss){return ss.reduce((a,s)=>a+parseFloat(s.total||0),0)}
+function nProfit(ss,ex){
+  const rev=sTot(ss);
+  const rm=ss.reduce((a,s)=>a+s.items.reduce((b,i)=>{const p=gp(i.product_id);return b+(p?p.rm*parseFloat(i.qty||0):0);},0),0);
+  return rev-rm-sKg(ss)*ohS()-ex.reduce((a,e)=>a+parseFloat(e.amount||0),0);
+}
+async function loadAll(){
+  syn(true);
+  try{
+    const[pr,sh,oh,sl,si,ex]=await Promise.all([
+      SB.from('bkp_products').select('*').order('sort_order'),
+      SB.from('bkp_shareholders').select('*').order('sort_order'),
+      SB.from('bkp_overhead').select('*').eq('id',1).single(),
+      SB.from('bkp_sales').select('*').order('sale_date',{ascending:false}),
+      SB.from('bkp_sale_items').select('*'),
+      SB.from('bkp_expenses').select('*').order('expense_date',{ascending:false}),
+    ]);
+    if(pr.error)throw pr.error;
+    C.products=pr.data||[];C.shareholders=sh.data||[];
+    if(oh.data)C.overhead=oh.data;
+    C.sales=sl.data||[];C.saleItems=si.data||[];C.expenses=ex.data||[];
+    syn(false);
+  }catch(e){serr();toast('เชื่อมต่อไม่ได้: '+e.message,true);}
+}
+const PAGES=[
+  {id:'dash',lbl:'ภาพรวมธุรกิจ',ic:'▦',g:'ภาพรวม'},
+  {id:'inv',lbl:'ออกบิลใหม่',ic:'◻',g:'การทำงาน'},
+  {id:'hist',lbl:'ประวัติลูกหนี้',ic:'◷',g:'การทำงาน'},
+  {id:'exp',lbl:'บันทึกรายจ่าย',ic:'◆',g:'การทำงาน'},
+  {id:'settle',lbl:'ยอดโอนค่าแรงผลิต',ic:'◈',g:'รายงาน'},
+  {id:'margin',lbl:'เฝ้าระวังกำไร',ic:'◉',g:'รายงาน'},
+  {id:'share',lbl:'รายงานผู้ถือหุ้น',ic:'◎',g:'รายงาน'},
+  {id:'set',lbl:'จัดการหุ้น & สินค้า',ic:'◐',g:'ตั้งค่า'},
+];
+function mkNav(){
+  let h='',lg='';
+  PAGES.forEach(p=>{
+    if(p.g!==lg){h+=`<div class="nsec">${p.g}</div>`;lg=p.g;}
+    h+=`<div class="ni${pg===p.id?' on':''}" onclick="go('${p.id}')"><span style="width:15px;text-align:center;font-size:12px">${p.ic}</span>${p.lbl}</div>`;
+  });
+  document.getElementById('nav').innerHTML=h;
+}
+async function go(page){
+  if(ch){ch.destroy();ch=null;}pg=page;
+  document.getElementById('ptitle').textContent=PAGES.find(x=>x.id===page)?.lbl||'';
+  mkNav();
+  document.getElementById('ct').innerHTML='<div class="loading"><div class="spin"></div>กำลังโหลด...</div>';
+  await loadAll();render();
+}
+function render(){
+  if(ch){ch.destroy();ch=null;}
+  const c=document.getElementById('ct');
+  if(pg==='dash'){c.innerHTML=rDash();aDash();}
+  else if(pg==='inv')c.innerHTML=rInv();
+  else if(pg==='hist')c.innerHTML=rHist();
+  else if(pg==='exp')c.innerHTML=rExp();
+  else if(pg==='settle')c.innerHTML=rSettle();
+  else if(pg==='margin')c.innerHTML=rMargin();
+  else if(pg==='share')c.innerHTML=rShare();
+  else if(pg==='set')c.innerHTML=rSet();
+}
+/* ── DASHBOARD ── */
+function rDash(){
+  const allS=C.sales.map(s=>({...s,items:C.saleItems.filter(i=>i.sale_id===s.id)}));
+  const exps=C.expenses;
+  const cash=allS.filter(s=>s.paid).reduce((a,s)=>a+parseFloat(s.total||0),0)-exps.reduce((a,e)=>a+parseFloat(e.amount||0),0);
+  const due=allS.filter(s=>!s.paid).reduce((a,s)=>a+parseFloat(s.total||0),0);
+  const profit=nProfit(allS,exps);
+  const fore=sTot(inR(ago(30),td()));
+  const recent=allS.slice(0,8);
+  return`<div class="mg4">
+    <div class="mc"><label>💵 เงินสดจริง</label><div class="val" style="color:#34d399">${fmt(cash)}</div><div class="sub">รับแล้ว − รายจ่าย</div></div>
+    <div class="mc"><label>📦 ยอดขายรวม</label><div class="val">${fmt(sTot(allS))}</div><div class="sub">ทุกรายการ</div></div>
+    <div class="mc"><label>⚠ ลูกหนี้ค้างชำระ</label><div class="val" style="color:#f87171">${fmt(due)}</div><div class="sub">รอโอนเงิน</div></div>
+    <div class="mc"><label>💰 กำไรสุทธิ</label><div class="val" style="color:var(--ac2)">${fmt(profit)}</div><div class="sub">หักต้นทุนทุกอย่าง</div></div>
+  </div>
+  <div class="g21" style="margin-bottom:14px">
+    <div class="card"><div class="ctit">แนวโน้มยอดขาย (10 รายการล่าสุด)</div><div style="position:relative;height:200px"><canvas id="sc"></canvas></div></div>
+    <div class="card" style="background:linear-gradient(135deg,#1e1b4b,#111827);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:6px">
+      <div style="font-size:10px;color:#6366f1;letter-spacing:.8px;text-transform:uppercase">พยากรณ์รายรับ 30 วัน</div>
+      <div style="font-size:34px;font-weight:800;color:#a5b4fc">${fmt(fore)}</div>
+      <div style="font-size:11px;color:var(--mu)">จากยอดขาย 30 วันล่าสุด</div>
+    </div>
+  </div>
+  <div class="card"><div class="ctit">รายการขายล่าสุด <button class="btn btn-p btn-sm" onclick="go('inv')">+ ออกบิลใหม่</button></div>
+  ${!recent.length?'<p style="color:var(--mu);text-align:center;padding:20px">ยังไม่มีรายการ</p>':
+  `<div class="tw"><table><tr><th>วันที่</th><th>ลูกค้า</th><th>สินค้า</th><th>ยอด</th><th>สถานะ</th></tr>
+  ${recent.map(s=>`<tr><td>${fdate(s.sale_date)}</td><td>${s.customer||'−'}</td>
+  <td style="font-size:11px;color:var(--mu)">${s.items.map(i=>`${gp(i.product_id)?.name||'?'} ${parseFloat(i.qty||0).toFixed(1)}kg`).join(' · ')}</td>
+  <td><b>${fmt(s.total)}</b></td><td><span class="badge ${s.paid?'bg':'br'}">${s.paid?'ชำระแล้ว':'ค้างชำระ'}</span></td></tr>`).join('')}
+  </table></div>`}</div>`;
+}
+function aDash(){
+  const c=document.getElementById('sc');if(!c)return;
+  const rows=[...C.sales].sort((a,b)=>a.sale_date.localeCompare(b.sale_date)).slice(-10);
+  if(!rows.length)return;
+  ch=new Chart(c,{type:'line',data:{labels:rows.map(s=>fdate(s.sale_date)),
+    datasets:[{data:rows.map(s=>parseFloat(s.total||0)),borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.07)',fill:true,tension:.4,pointBackgroundColor:'#818cf8',pointRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{ticks:{color:'#475569',font:{size:10,family:'IBM Plex Mono'}},grid:{color:'rgba(255,255,255,.025)'}},
+            y:{ticks:{color:'#475569',font:{size:10},callback:v=>'฿'+v.toLocaleString()},grid:{color:'rgba(255,255,255,.03)'}}}}});
+}
+/* ── INVOICE ── */
+function rInv(){
+  return`<div class="card" style="max-width:560px;margin:0 auto">
+  <div class="ctit" style="font-size:15px">◻ ออกใบแจ้งหนี้</div>
+  <div class="frow"><div><label class="fl">วันที่</label><input type="date" id="id" value="${td()}"></div>
+  <div><label class="fl">ลูกค้า</label><input id="ic" placeholder="ชื่อลูกค้า..."></div></div>
+  <div>
+  ${C.products.map(p=>`<div class="pitem">
+    <div><span class="dot" style="background:${p.color}"></span><b>${p.name}</b><span style="color:var(--mu);font-size:11px;margin-left:6px">@${p.price}฿/กก.</span></div>
+    <div class="qi"><button class="qb" onclick="adj(${p.id},-0.5)">−</button>
+    <input type="number" id="q${p.id}" value="0" min="0" step="0.5" oninput="calcT()">
+    <button class="qb" onclick="adj(${p.id},0.5)">+</button></div>
+  </div>`).join('')}
+  </div>
+  <div class="totrow"><span style="color:var(--mu)">รวมยอดบิล</span><span class="totamt" id="itot">฿0</span></div>
+  <div style="margin-top:10px;display:flex;align-items:center;gap:8px">
+    <input type="checkbox" id="ipd" style="width:auto;height:16px;cursor:pointer">
+    <label for="ipd" style="font-size:12px;color:var(--mu);cursor:pointer">ชำระเงินแล้ว</label>
+  </div>
+  <button class="btn btn-p" style="width:100%;margin-top:14px;padding:12px" id="savebtn" onclick="saveSale()">บันทึกบิล</button>
+  </div>`;
+}
+function adj(pid,d){const el=document.getElementById('q'+pid);if(!el)return;el.value=Math.max(0,Math.round((parseFloat(el.value||0)+d)*10)/10);calcT();}
+function calcT(){let t=0;C.products.forEach(p=>{const q=parseFloat(document.getElementById('q'+p.id)?.value||0);t+=q*p.price;});const el=document.getElementById('itot');if(el)el.textContent=fmt(t);}
+async function saveSale(){
+  const btn=document.getElementById('savebtn');
+  const items=C.products.map(p=>({id:p.id,qty:parseFloat(document.getElementById('q'+p.id)?.value||0)})).filter(i=>i.qty>0);
+  if(!items.length){toast('กรุณาใส่จำนวนสินค้า',true);return;}
+  const total=items.reduce((s,i)=>{const p=gp(i.id);return s+(p?p.price*i.qty:0);},0);
+  const paid=document.getElementById('ipd')?.checked;
+  if(btn)btn.disabled=true;syn(true);
+  try{
+    const{data:sale,error:sE}=await SB.from('bkp_sales').insert({sale_date:document.getElementById('id')?.value,customer:document.getElementById('ic')?.value.trim()||null,total,paid,paid_at:paid?td():null}).select().single();
+    if(sE)throw sE;
+    await SB.from('bkp_sale_items').insert(items.map(i=>({sale_id:sale.id,product_id:i.id,qty:i.qty})));
+    syn(false);toast('บันทึกบิลสำเร็จ!');go('hist');
+  }catch(e){syn(false);serr();toast('ผิดพลาด: '+e.message,true);if(btn)btn.disabled=false;}
+}
+/* ── HISTORY ── */
+function rHist(){
+  const f=F.hf;
+  const all=C.sales.map(s=>({...s,items:C.saleItems.filter(i=>i.sale_id===s.id)})).sort((a,b)=>b.sale_date.localeCompare(a.sale_date));
+  const shown=f==='paid'?all.filter(s=>s.paid):f==='due'?all.filter(s=>!s.paid):all;
+  const due=all.filter(s=>!s.paid).reduce((a,s)=>a+parseFloat(s.total||0),0);
+  return`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+  <div style="display:flex;gap:6px">${['all','due','paid'].map(x=>`<button class="btn btn-sm ${F.hf===x?'btn-p':'btn-o'}" onclick="F.hf='${x}';render()">${x==='all'?'ทั้งหมด':x==='due'?'ค้างชำระ':'ชำระแล้ว'}</button>`).join('')}</div>
+  <span style="font-size:12px;color:var(--mu)">${shown.length} รายการ${due>0?` · ลูกหนี้ <b style="color:#f87171">${fmt(due)}</b>`:''}</span></div>
+  <div class="card">${!shown.length?'<p style="color:var(--mu);text-align:center;padding:24px">ไม่มีรายการ</p>':
+  shown.map(s=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--bd)">
+  <div style="display:flex;gap:14px;align-items:center">
+    <div style="text-align:center;min-width:36px">
+      <div style="font-size:9px;color:var(--mu)">${new Date(s.sale_date+'T00:00:00').toLocaleDateString('th-TH',{month:'short'})}</div>
+      <div style="font-size:20px;font-weight:700;color:#fff">${new Date(s.sale_date+'T00:00:00').getDate()}</div>
+    </div>
+    <div><div style="font-weight:600;margin-bottom:2px">${s.customer||'ไม่ระบุชื่อ'}</div>
+    <div style="font-size:11px;color:var(--mu);margin-bottom:5px">${s.items.map(i=>`${gp(i.product_id)?.name||'?'} ${parseFloat(i.qty||0).toFixed(1)}kg`).join(' · ')}</div>
+    <span class="badge ${s.paid?'bg':'br'}">${s.paid?'ชำระแล้ว':'ค้างชำระ'}</span></div>
+  </div>
+  <div style="text-align:right;flex-shrink:0;margin-left:12px">
+    <div style="font-size:18px;font-weight:700">${fmt(s.total)}</div>
+    <div style="display:flex;gap:5px;justify-content:flex-end;margin-top:6px">
+      ${!s.paid?`<button class="btn btn-s btn-sm" onclick="markPaid('${s.id}')">รับเงิน</button>`:''}
+      <button class="btn btn-o btn-sm" onclick="delSale('${s.id}')">🗑</button>
+    </div>
+  </div></div>`).join('')}</div>`;
+}
+async function markPaid(id){syn(true);const{error}=await SB.from('bkp_sales').update({paid:true,paid_at:td()}).eq('id',id);syn(false);if(error){serr();toast('ผิดพลาด',true);return;}toast('บันทึกการรับเงินสำเร็จ');go('hist');}
+async function delSale(id){if(!confirm('ลบรายการนี้?'))return;syn(true);await SB.from('bkp_sales').delete().eq('id',id);syn(false);toast('ลบแล้ว');go('hist');}
+/* ── EXPENSE ── */
+function rExp(){
+  const tot=C.expenses.reduce((a,e)=>a+parseFloat(e.amount||0),0);
+  return`<div class="g2" style="align-items:start">
+  <div class="card"><div class="ctit">◆ บันทึกรายจ่าย</div>
+  <div class="frow"><div><label class="fl">วันที่</label><input type="date" id="ed" value="${td()}"></div>
+  <div><label class="fl">ยอดเงิน (บาท)</label><input type="number" id="ea" placeholder="0.00" step="0.01"></div></div>
+  <div class="fg"><label class="fl">รายละเอียด</label><textarea id="en" rows="3" placeholder="เช่น ค่าวัตถุดิบ ค่าแก๊ส..." style="resize:none"></textarea></div>
+  <button class="btn btn-p" style="width:100%" id="expbtn" onclick="saveExp()">บันทึก</button></div>
+  <div class="card"><div class="ctit">รายการค่าใช้จ่าย <span style="font-size:12px;color:#f87171;font-weight:400">${fmt(tot)}</span></div>
+  ${!C.expenses.length?'<p style="color:var(--mu);text-align:center;padding:16px">ยังไม่มีรายการ</p>':
+  C.expenses.slice(0,30).map(e=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bd)">
+  <div><div style="font-weight:500">${e.note||'(ไม่มีรายละเอียด)'}</div><div style="font-size:11px;color:var(--mu)">${fdate(e.expense_date)}</div></div>
+  <div style="display:flex;align-items:center;gap:8px"><span style="color:#f87171;font-weight:600">${fmt(e.amount)}</span>
+  <button class="btn btn-o btn-sm" onclick="delExp('${e.id}')">🗑</button></div></div>`).join('')}
+  </div></div>`;
+}
+async function saveExp(){
+  const btn=document.getElementById('expbtn');
+  const amount=parseFloat(document.getElementById('ea')?.value);
+  if(!amount||amount<=0){toast('กรุณาใส่ยอดเงิน',true);return;}
+  if(btn)btn.disabled=true;syn(true);
+  const{error}=await SB.from('bkp_expenses').insert({expense_date:document.getElementById('ed')?.value,amount,note:document.getElementById('en')?.value.trim()||null});
+  syn(false);if(error){serr();toast('ผิดพลาด: '+error.message,true);if(btn)btn.disabled=false;return;}
+  toast('บันทึกสำเร็จ');go('exp');
+}
+async function delExp(id){if(!confirm('ลบรายจ่ายนี้?'))return;syn(true);await SB.from('bkp_expenses').delete().eq('id',id);syn(false);go('exp');}
+/* ── SETTLE ── */
+function rSettle(){
+  const{stf,stt}=F;const ss=inR(stf,stt);const kg=sKg(ss);const oh=C.overhead;const oht=ohS();
+  const ohRows=[{k:'LABOR',v:oh.labor,c:'#818cf8'},{k:'ACCOUNTING',v:oh.accounting,c:'#3b82f6'},{k:'ELECTRICITY',v:oh.electricity,c:'#34d399'},{k:'CLEANING',v:oh.cleaning,c:'#64748b'},{k:'DEPRECIATION',v:oh.depreciation,c:'#fbbf24'},{k:'GAS',v:oh.gas,c:'#f87171'}];
+  return`<div class="card" style="margin-bottom:14px"><div class="frow" style="margin-bottom:0">
+  <div><label class="fl">เริ่มวันที่</label><input type="date" value="${stf}" onchange="F.stf=this.value;render()"></div>
+  <div><label class="fl">ถึงวันที่</label><input type="date" value="${stt}" onchange="F.stt=this.value;render()"></div>
+  </div></div>
+  <div class="g2" style="margin-bottom:14px">
+  <div class="sh"><h4>น้ำหนักผลิตรวม (Kg)</h4><div class="sh-kg">${Math.round(kg).toLocaleString()}</div>
+  <div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:10px">ยอดโอนจ่ายรวม</div><div class="sh-pay">${fmt(kg*oht)}</div></div>
+  <div class="card" style="margin-bottom:0">${ohRows.map(o=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd)">
+  <div><div style="font-size:10px;font-weight:700;color:${o.c};font-family:'IBM Plex Mono',monospace;letter-spacing:.8px">${o.k}</div>
+  <div style="font-size:11px;color:var(--mu)">${Math.round(kg).toLocaleString()} kg × ฿${o.v||0}</div></div><b>${fmt(kg*(+o.v||0))}</b></div>`).join('')}</div>
+  </div>
+  <div class="card"><div class="ctit">รายละเอียดต่อสินค้า</div><div class="tw"><table>
+  <tr><th>สินค้า</th><th>กก.</th><th>ยอดขาย</th><th>RM Cost</th><th>โสหุ้ย</th><th style="color:#34d399">กำไร</th></tr>
+  ${C.products.map(p=>{const k=ss.reduce((a,s)=>a+s.items.filter(i=>i.product_id===p.id).reduce((b,i)=>b+parseFloat(i.qty||0),0),0);
+  const r=k*p.price,m=k*p.rm,v=k*oht;
+  return`<tr><td><span class="dot" style="background:${p.color}"></span>${p.name}</td><td>${k.toFixed(1)}</td><td>${fmt(r)}</td><td>${fmt(m)}</td><td>${fmt(v)}</td><td style="color:#34d399;font-weight:600">${fmt(r-m-v)}</td></tr>`;}).join('')}
+  </table></div></div>`;
+}
+/* ── MARGIN ── */
+function rMargin(){
+  const oht=ohS(),al=+C.overhead.alert_pct||15;
+  return`<div style="margin-bottom:18px"><div style="font-size:17px;font-weight:700">◉ Margin Watchdog</div>
+  <div style="font-size:12px;color:var(--mu);margin-top:4px">โสหุ้ยรวม ฿${oht}/กก. · เตือนเมื่อต่ำกว่า ${al}%</div></div>
+  <div class="mmg" style="margin-bottom:16px">
+  ${C.products.map(p=>{const pr=p.price-p.rm-oht;const pct=pr/p.price*100;const bad=pct<al;
+  return`<div class="mcard${bad?' warn':''}">
+  <div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><span class="dot" style="background:${p.color}"></span><b>${p.name}</b></div>${bad?'<span style="color:#f87171">⚠</span>':''}</div>
+  <div class="mpct">${pct.toFixed(1)}%</div>
+  <div style="margin-top:8px;font-size:11px;color:var(--mu)">กำไร/กก. ≈ ${fmt(pr)}</div>
+  <div style="font-size:10px;color:var(--dm);margin-top:3px">ขาย ฿${p.price} · RM ฿${p.rm} · OH ฿${oht}</div>
+  </div>`;}).join('')}</div>
+  <div class="card"><div class="ctit">โสหุ้ยต่อ กก.</div>
+  <div class="g3">${Object.entries(C.overhead).filter(([k])=>k!=='id'&&k!=='alert_pct').map(([k,v])=>`<div style="background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:12px">
+  <div style="font-size:9px;color:var(--mu);text-transform:uppercase;letter-spacing:.8px;font-family:'IBM Plex Mono',monospace">${k}</div>
+  <div style="font-size:22px;font-weight:700;margin-top:4px">฿${v}<span style="font-size:11px;color:var(--mu)">/กก.</span></div></div>`).join('')}</div>
+  <div style="margin-top:10px;padding:10px 14px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;display:flex;justify-content:space-between">
+  <span style="color:var(--mu)">รวมทั้งหมด</span><b style="color:var(--ac2)">฿${oht}/กก.</b></div></div>`;
+}
+/* ── SHARE ── */
+function rShare(){
+  const{shf,sht}=F;const ss=inR(shf,sht);const ex=C.expenses.filter(e=>e.expense_date>=shf&&e.expense_date<=sht);
+  const profit=nProfit(ss,ex);const oht=ohS();
+  const clrs=['#818cf8','#34d399','#fbbf24','#60a5fa','#f472b6','#a78bfa','#2dd4bf','#94a3b8'];
+  return`<div class="card" style="margin-bottom:14px"><div class="frow" style="margin-bottom:0">
+  <div><label class="fl">เริ่มวันที่</label><input type="date" value="${shf}" onchange="F.shf=this.value;render()"></div>
+  <div><label class="fl">ถึงวันที่</label><input type="date" value="${sht}" onchange="F.sht=this.value;render()"></div>
+  </div></div>
+  <div class="card"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:18px">
+  <div><div style="font-size:20px;font-weight:800">รายงานผลประกอบการ</div>
+  <div style="color:var(--ac);font-size:13px;margin-top:2px">ครัวกลาง BKP Partnership</div>
+  <div style="font-size:11px;color:var(--mu);margin-top:2px">${shf} ถึง ${sht}</div></div>
+  <div style="text-align:right"><div style="font-size:11px;color:var(--mu)">กำไรสุทธิปันผล</div>
+  <div style="font-size:32px;font-weight:800">${fmt(profit)}</div>
+  <button class="btn btn-o btn-sm" style="margin-top:6px" onclick="window.print()">🖨 พิมพ์</button></div></div>
+  <div class="tw"><table><tr><th>สินค้า</th><th>กก.</th><th>ยอดขาย</th><th style="color:#34d399">กำไร</th></tr>
+  ${C.products.map(p=>{const k=ss.reduce((a,s)=>a+s.items.filter(i=>i.product_id===p.id).reduce((b,i)=>b+parseFloat(i.qty||0),0),0);
+  const r=k*p.price,cost=k*(p.rm+oht);
+  return`<tr><td><span class="dot" style="background:${p.color}"></span>${p.name}</td><td>${k.toFixed(0)}</td><td>${fmt(r)}</td><td style="color:#34d399;font-weight:600">${fmt(r-cost)}</td></tr>`;}).join('')}
+  </table></div>
+  ${ex.length?`<div style="margin-top:10px;padding:10px 14px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;display:flex;justify-content:space-between">
+  <span style="color:var(--mu)">รายจ่ายเพิ่มเติม</span><b style="color:#f87171">−${fmt(ex.reduce((a,e)=>a+parseFloat(e.amount||0),0))}</b></div>`:''}
+  </div>
+  <div style="font-size:14px;font-weight:600;margin-bottom:10px">ส่วนแบ่งกำไรผู้ถือหุ้น</div>
+  <div class="sgrid">${C.shareholders.map((s,i)=>`<div class="scard">
+  <div style="font-size:11px;color:var(--mu);margin-bottom:4px">${s.name}</div>
+  <div style="font-size:11px;color:var(--dm);margin-bottom:8px">${s.pct}%</div>
+  <div style="font-size:18px;font-weight:700;color:${clrs[i]||'#94a3b8'}">${fmtD(profit*s.pct/100)}</div>
+  </div>`).join('')}</div>`;
+}
+/* ── SETTINGS ── */
+function rSet(){
+  const sumPct=C.shareholders.reduce((a,x)=>a+(+x.pct||0),0);const oh=C.overhead;
+  return`<div class="g2" style="align-items:start">
+  <div class="card"><div class="ctit">📦 ตั้งค่าสินค้า</div>
+  ${C.products.map(p=>`<div style="background:var(--bg);border:1px solid var(--bd);border-radius:9px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+  <div><span class="dot" style="background:${p.color}"></span><b>${p.name}</b></div>
+  <div style="display:flex;gap:10px">
+  <div style="text-align:center"><div style="font-size:9px;color:var(--mu);margin-bottom:4px">ทุน RM</div>
+  <input type="number" value="${p.rm}" style="width:78px;text-align:center;font-size:12px" onchange="upP(${p.id},'rm',this.value)"></div>
+  <div style="text-align:center"><div style="font-size:9px;color:var(--mu);margin-bottom:4px">ราคาขาย</div>
+  <input type="number" value="${p.price}" style="width:78px;text-align:center;font-size:12px;color:#818cf8" onchange="upP(${p.id},'price',this.value)"></div>
+  </div></div>`).join('')}</div>
+  <div>
+  <div class="card" style="margin-bottom:14px"><div class="ctit">👥 ผู้ถือหุ้น <button class="btn btn-s btn-sm" onclick="addSH()">+ เพิ่ม</button></div>
+  ${C.shareholders.map(sh=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bd)">
+  <span>${sh.name}</span>
+  <div style="display:flex;align-items:center;gap:6px">
+  <input type="number" value="${sh.pct}" style="width:60px;text-align:center;font-size:12px;color:#34d399" onchange="upSH(${sh.id},'pct',this.value)">
+  <span style="font-size:11px;color:var(--mu)">%</span>
+  <button class="btn btn-o btn-sm" onclick="delSH(${sh.id})">🗑</button>
+  </div></div>`).join('')}
+  <div style="margin-top:8px;text-align:right;font-size:12px">รวม: <b style="color:${Math.abs(sumPct-100)<.01?'#34d399':'#f87171'}">${sumPct.toFixed(1)}%</b>
+  ${Math.abs(sumPct-100)>.01?'<span style="color:#f87171"> ⚠ ต้องรวมเป็น 100%</span>':''}</div></div>
+  <div class="card"><div class="ctit">⚡ โสหุ้ย (฿/กก.)</div>
+  ${['labor','accounting','electricity','cleaning','depreciation','gas'].map(k=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bd)">
+  <span style="font-size:12px;text-transform:uppercase;color:var(--mu);font-family:'IBM Plex Mono',monospace">${k}</span>
+  <div style="display:flex;align-items:center;gap:5px">
+  <input type="number" value="${oh[k]||0}" style="width:70px;text-align:center;font-size:12px" onchange="upOH('${k}',this.value)">
+  <span style="font-size:11px;color:var(--mu)">฿/กก.</span></div></div>`).join('')}
+  <div style="margin-top:10px;padding:10px 14px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;display:flex;justify-content:space-between">
+  <span style="color:var(--mu)">รวมโสหุ้ย</span><b style="color:var(--ac2)">฿${ohS()}/กก.</b></div>
+  </div></div></div>`;
+}
+async function upP(id,f,v){const{error}=await SB.from('bkp_products').update({[f]:parseFloat(v)||0}).eq('id',id);if(error){serr();toast('บันทึกไม่สำเร็จ',true);return;}const p=C.products.find(x=>x.id===id);if(p)p[f]=parseFloat(v)||0;toast('บันทึกสำเร็จ');}
+async function upOH(k,v){const{error}=await SB.from('bkp_overhead').update({[k]:parseFloat(v)||0}).eq('id',1);if(error){serr();return;}C.overhead[k]=parseFloat(v)||0;toast('บันทึกสำเร็จ');}
+async function upSH(id,f,v){const{error}=await SB.from('bkp_shareholders').update({[f]:parseFloat(v)||0}).eq('id',id);if(error){serr();return;}const sh=C.shareholders.find(x=>x.id===id);if(sh)sh[f]=parseFloat(v)||0;render();}
+async function addSH(){const name=prompt('ชื่อผู้ถือหุ้น:');if(!name)return;const pct=parseFloat(prompt('สัดส่วน (%):','0')||'0');const{data,error}=await SB.from('bkp_shareholders').insert({name,pct,sort_order:C.shareholders.length+1}).select().single();if(error){serr();toast('ผิดพลาด',true);return;}C.shareholders.push(data);toast('เพิ่มสำเร็จ');render();}
+async function delSH(id){if(!confirm('ลบผู้ถือหุ้นนี้?'))return;await SB.from('bkp_shareholders').delete().eq('id',id);C.shareholders=C.shareholders.filter(x=>x.id!==id);render();}
+/* ── INIT ── */
+document.getElementById('tdate').textContent=new Date().toLocaleDateString('th-TH',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+(async()=>{await loadAll();mkNav();render();})();
+</script>
+</body>
+</html>
