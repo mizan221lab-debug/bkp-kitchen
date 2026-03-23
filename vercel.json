@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "bkp-kitchen",
-  "builds": [{ "src": "index.html", "use": "@vercel/static" }],
-  "routes": [{ "src": "/(.*)", "dest": "/index.html" }]
+  "builds": [{ "src": "bkp_index.html", "use": "@vercel/static" }],
+  "routes": [{ "src": "/(.*)", "dest": "/bkp_index.html" }]
 }
