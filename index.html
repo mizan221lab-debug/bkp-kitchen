@@ -50,7 +50,7 @@ th{text-align:left;padding:8px 12px;color:var(--mu);font-weight:500;border-botto
 td{padding:11px 12px;border-bottom:1px solid rgba(30,45,69,.5);vertical-align:middle}
 tr:last-child td{border-bottom:none}tr:hover td{background:rgba(99,102,241,.04)}
 .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
-.bg{background:rgba(16,185,129,.15);color:#34d399}.br{background:rgba(239,68,68,.15);color:#f87171}
+.bg{background:rgba(16,185,129,.15);color:#34d399}.br{background:rgba(239,68,68,.15);color:#f87171}.bw{background:rgba(245,158,11,.15);color:#fbbf24}
 .pitem{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--bg);border-radius:8px;margin-bottom:7px;border:1px solid var(--bd)}
 .qi{display:flex;align-items:center;gap:5px}.qi input{width:70px;text-align:center;padding:6px 8px}
 .qb{width:28px;height:28px;border-radius:5px;border:1px solid var(--bd2);background:var(--sf2);color:var(--tx);cursor:pointer;font-size:15px;display:inline-flex;align-items:center;justify-content:center}
@@ -100,7 +100,7 @@ const SB=createClient(
   'https://suatxkfygvlrlsscvmoo.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1YXR4a2Z5Z3Zscmxzc2N2bW9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNzM5MjIsImV4cCI6MjA4OTc0OTkyMn0.5yBBvcYRGbrcnAftTuT08_Os3ouwSmnPiixCuOxRODA'
 );
-let C={products:[],shareholders:[],overhead:{labor:15,accounting:8,electricity:1,cleaning:0,depreciation:2,gas:4,alert_pct:15},sales:[],saleItems:[],expenses:[]};
+let C={products:[],shareholders:[],overhead:{labor:15,accounting:8,electricity:1,cleaning:0,depreciation:2,gas:4,alert_pct:15},sales:[],saleItems:[],expenses:[],payments:[]};
 let pg='dash',ch=null;
 let F={hf:'all',sf:ago(60),st:td(),shf:ago(365),sht:td(),stf:ago(60),stt:td()};
 function td(){return new Date().toISOString().slice(0,10)}
@@ -124,18 +124,20 @@ function nProfit(ss,ex){
 async function loadAll(){
   syn(true);
   try{
-    const[pr,sh,oh,sl,si,ex]=await Promise.all([
+    const[pr,sh,oh,sl,si,ex,py]=await Promise.all([
       SB.from('bkp_products').select('*').order('sort_order'),
       SB.from('bkp_shareholders').select('*').order('sort_order'),
       SB.from('bkp_overhead').select('*').eq('id',1).single(),
       SB.from('bkp_sales').select('*').order('sale_date',{ascending:false}),
       SB.from('bkp_sale_items').select('*'),
       SB.from('bkp_expenses').select('*').order('expense_date',{ascending:false}),
+      SB.from('bkp_payments').select('*').order('created_at',{ascending:false}),
     ]);
     if(pr.error)throw pr.error;
     C.products=pr.data||[];C.shareholders=sh.data||[];
     if(oh.data)C.overhead=oh.data;
     C.sales=sl.data||[];C.saleItems=si.data||[];C.expenses=ex.data||[];
+    C.payments=py.data||[];
     syn(false);
   }catch(e){serr();toast('เชื่อมต่อไม่ได้: '+e.message,true);}
 }
@@ -143,6 +145,7 @@ const PAGES=[
   {id:'dash',lbl:'ภาพรวมธุรกิจ',ic:'▦',g:'ภาพรวม'},
   {id:'inv',lbl:'ออกบิลใหม่',ic:'◻',g:'การทำงาน'},
   {id:'hist',lbl:'ประวัติลูกหนี้',ic:'◷',g:'การทำงาน'},
+  {id:'pay',lbl:'รับเงิน & หักหนี้',ic:'◈',g:'การทำงาน'},
   {id:'exp',lbl:'บันทึกรายจ่าย',ic:'◆',g:'การทำงาน'},
   {id:'settle',lbl:'ยอดโอนค่าแรงผลิต',ic:'◈',g:'รายงาน'},
   {id:'margin',lbl:'เฝ้าระวังกำไร',ic:'◉',g:'รายงาน'},
@@ -170,12 +173,14 @@ function render(){
   if(pg==='dash'){c.innerHTML=rDash();aDash();}
   else if(pg==='inv')c.innerHTML=rInv();
   else if(pg==='hist')c.innerHTML=rHist();
+  else if(pg==='pay')c.innerHTML=rPay();
   else if(pg==='exp')c.innerHTML=rExp();
   else if(pg==='settle')c.innerHTML=rSettle();
   else if(pg==='margin')c.innerHTML=rMargin();
   else if(pg==='share')c.innerHTML=rShare();
   else if(pg==='set')c.innerHTML=rSet();
 }
+
 /* ── DASHBOARD ── */
 function rDash(){
   const allS=C.sales.map(s=>({...s,items:C.saleItems.filter(i=>i.sale_id===s.id)}));
@@ -184,11 +189,12 @@ function rDash(){
   const due=allS.filter(s=>!s.paid).reduce((a,s)=>a+parseFloat(s.total||0),0);
   const profit=nProfit(allS,exps);
   const fore=sTot(inR(ago(30),td()));
+  const pendingPay=C.payments.filter(p=>p.status==='pending').length;
   const recent=allS.slice(0,8);
   return`<div class="mg4">
     <div class="mc"><label>💵 เงินสดจริง</label><div class="val" style="color:#34d399">${fmt(cash)}</div><div class="sub">รับแล้ว − รายจ่าย</div></div>
     <div class="mc"><label>📦 ยอดขายรวม</label><div class="val">${fmt(sTot(allS))}</div><div class="sub">ทุกรายการ</div></div>
-    <div class="mc"><label>⚠ ลูกหนี้ค้างชำระ</label><div class="val" style="color:#f87171">${fmt(due)}</div><div class="sub">รอโอนเงิน</div></div>
+    <div class="mc"><label>⚠ ลูกหนี้ค้างชำระ</label><div class="val" style="color:#f87171">${fmt(due)}</div><div class="sub">${pendingPay>0?`<span style="color:#f59e0b">🧾 สลิปรอ ${pendingPay} รายการ</span>`:'รอโอนเงิน'}</div></div>
     <div class="mc"><label>💰 กำไรสุทธิ</label><div class="val" style="color:var(--ac2)">${fmt(profit)}</div><div class="sub">หักต้นทุนทุกอย่าง</div></div>
   </div>
   <div class="g21" style="margin-bottom:14px">
@@ -217,6 +223,7 @@ function aDash(){
     scales:{x:{ticks:{color:'#475569',font:{size:10,family:'IBM Plex Mono'}},grid:{color:'rgba(255,255,255,.025)'}},
             y:{ticks:{color:'#475569',font:{size:10},callback:v=>'฿'+v.toLocaleString()},grid:{color:'rgba(255,255,255,.03)'}}}}});
 }
+
 /* ── INVOICE ── */
 function rInv(){
   return`<div class="card" style="max-width:560px;margin:0 auto">
@@ -226,7 +233,7 @@ function rInv(){
   <div>
   ${C.products.map(p=>`<div class="pitem">
     <div><span class="dot" style="background:${p.color}"></span><b>${p.name}</b><span style="color:var(--mu);font-size:11px;margin-left:6px">@${p.price}฿/กก.</span></div>
-    <div class="qi"><button class="qb" onclick="adj(${p.id},-0.5)">−</button>
+    <div class="qi"><button class="qb" onclick="adj({{p.id},-0.5)">−</button>
     <input type="number" id="q${p.id}" value="0" min="0" step="0.5" oninput="calcT()">
     <button class="qb" onclick="adj(${p.id},0.5)">+</button></div>
   </div>`).join('')}
@@ -255,6 +262,7 @@ async function saveSale(){
     syn(false);toast('บันทึกบิลสำเร็จ!');go('hist');
   }catch(e){syn(false);serr();toast('ผิดพลาด: '+e.message,true);if(btn)btn.disabled=false;}
 }
+
 /* ── HISTORY ── */
 function rHist(){
   const f=F.hf;
@@ -285,6 +293,180 @@ function rHist(){
 }
 async function markPaid(id){syn(true);const{error}=await SB.from('bkp_sales').update({paid:true,paid_at:td()}).eq('id',id);syn(false);if(error){serr();toast('ผิดพลาด',true);return;}toast('บันทึกการรับเงินสำเร็จ');go('hist');}
 async function delSale(id){if(!confirm('ลบรายการนี้?'))return;syn(true);await SB.from('bkp_sales').delete().eq('id',id);syn(false);toast('ลบแล้ว');go('hist');}
+
+/* ── PAYMENT & RECONCILIATION ── */
+function rPay(){
+  const customers=[...new Set(C.sales.map(s=>s.customer).filter(Boolean))];
+  const pending=C.payments.filter(p=>p.status==='pending');
+  const done=C.payments.filter(p=>p.status==='reconciled');
+  return`<div class="g2" style="align-items:start">
+  <div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="ctit" style="font-size:14px">💚 บันทึกรับเงิน + หักลบหนี้</div>
+      <div class="frow">
+        <div><label class="fl">ลูกค้า</label>
+          <select id="py_cust" onchange="previewReconcile()">
+            <option value="">-- เลือกลูกค้า --</option>
+            ${customers.map(c=>`<option value="${c}">${c}</option>`).join('')}
+          </select>
+        </div>
+        <div><label class="fl">ยอดที่รับมา (฿)</label>
+          <input type="number" id="py_amt" placeholder="0.00" step="0.01" oninput="previewReconcile()">
+        </div>
+      </div>
+      <div class="frow">
+        <div><label class="fl">วันที่รับเงิน</label><input type="date" id="py_date" value="${td()}"></div>
+        <div></div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:12px">
+        <div style="font-size:10px;color:#818cf8;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.5px">📅 รอบที่หักลบหนี้</div>
+        <div class="frow" style="margin-bottom:0">
+          <div><label class="fl">ตั้งแต่</label><input type="date" id="py_ps" value="${ago(30)}" onchange="previewReconcile()"></div>
+          <div><label class="fl">ถึงวันที่</label><input type="date" id="py_pe" value="${td()}" onchange="previewReconcile()"></div>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">URL สลิป (ถ้ามี)</label>
+        <input id="py_slip" placeholder="https://drive.google.com/..." type="url">
+      </div>
+      <div class="fg"><label class="fl">หมายเหตุ</label>
+        <textarea id="py_note" rows="2" style="resize:none" placeholder="เช่น โอนค่าหมูหยอง + ไส้กรอก รอบมีนาคม"></textarea>
+      </div>
+      <div id="py_preview" style="margin-bottom:12px"></div>
+      <button class="btn btn-s" style="width:100%;padding:12px" id="py_btn" onclick="savePay()">✅ ยืนยันรับเงิน + หักลบหนี้</button>
+    </div>
+
+    ${pending.length>0?`<div class="card" style="border-color:rgba(245,158,11,.3)">
+      <div class="ctit"><span style="color:#f59e0b">🧾 สลิปรอยืนยัน (${pending.length})</span></div>
+      ${pending.map(p=>`<div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:12px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div>
+            <div style="font-weight:600;margin-bottom:3px">${p.customer||'ไม่ระบุ'}</div>
+            <div style="font-size:11px;color:var(--mu)">${p.payment_date||''} ${p.note?'· '+p.note:''}</div>
+            ${p.line_msg_id?`<div style="font-size:10px;color:#818cf8;margin-top:3px">📱 ส่งจาก LINE</div>`:''}
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:16px;font-weight:700;color:#f59e0b">${p.amount>0?fmt(p.amount):'รอยืนยันยอด'}</div>
+            <div style="display:flex;gap:5px;justify-content:flex-end;margin-top:5px">
+              <button class="btn btn-s btn-sm" onclick="fillFromPending('${p.id}','${p.customer||''}',${p.amount||0})">นำมาใช้</button>
+              <button class="btn btn-o btn-sm" onclick="delPay('${p.id}')">🗑</button>
+            </div>
+          </div>
+        </div>
+        ${p.slip_url?`<a href="${p.slip_url}" target="_blank" style="font-size:11px;color:var(--ac2);display:block;margin-top:6px">📎 ดูสลิป</a>`:''}
+      </div>`).join('')}
+    </div>`:''}
+  </div>
+
+  <div class="card">
+    <div class="ctit">ประวัติการรับเงิน <span style="font-size:12px;color:var(--mu);font-weight:400">${C.payments.filter(p=>p.status==='reconciled').length} รายการ</span></div>
+    ${!done.length?'<p style="color:var(--mu);text-align:center;padding:20px">ยังไม่มีรายการหักลบ</p>':
+    done.map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bd)">
+      <div>
+        <div style="font-weight:600;margin-bottom:2px">${p.customer}</div>
+        <div style="font-size:11px;color:var(--mu)">${fdate(p.payment_date)}${p.period_start?` · รอบ ${fdate(p.period_start)}→${fdate(p.period_end)}`:''}</div>
+        ${p.note?`<div style="font-size:11px;color:var(--dm);margin-top:2px">${p.note}</div>`:''}
+        ${p.bills_cleared&&p.bills_cleared.length>0?`<div style="font-size:10px;color:#34d399;margin-top:2px">หักลบ ${p.bills_cleared.length} บิล</div>`:''}
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-left:12px">
+        <div style="font-size:18px;font-weight:700;color:#34d399">${fmt(p.amount)}</div>
+        ${p.slip_url?`<a href="${p.slip_url}" target="_blank" style="font-size:11px;color:var(--ac2);display:block;margin-top:3px">📎 สลิป</a>`:''}
+      </div>
+    </div>`).join('')}
+  </div>
+  </div>`;
+}
+
+function previewReconcile(){
+  const cust=document.getElementById('py_cust')?.value;
+  const ps=document.getElementById('py_ps')?.value;
+  const pe=document.getElementById('py_pe')?.value;
+  const amt=parseFloat(document.getElementById('py_amt')?.value||'0');
+  const preview=document.getElementById('py_preview');
+  if(!preview)return;
+  if(!cust||!ps||!pe){preview.innerHTML='';return;}
+  const bills=C.sales.filter(s=>s.customer===cust&&!s.paid&&s.sale_date>=ps&&s.sale_date<=pe);
+  if(!bills.length){
+    preview.innerHTML=`<div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:10px;font-size:12px;color:#34d399">✅ ไม่มีบิลค้างในรอบนี้</div>`;
+    return;
+  }
+  const total=bills.reduce((s,b)=>s+parseFloat(b.total||0),0);
+  const diff=amt-total;
+  preview.innerHTML=`<div style="background:var(--bg);border:1px solid ${diff>=0||amt===0?'rgba(99,102,241,.3)':'rgba(239,68,68,.3)'};border-radius:8px;padding:12px">
+    <div style="font-size:11px;color:var(--mu);margin-bottom:8px;font-weight:500">บิลที่จะหักลบ (${bills.length} รายการ)</div>
+    ${bills.map(b=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid rgba(30,45,69,.4)">
+      <span style="color:var(--mu)">${fdate(b.sale_date)}</span><span style="color:#f59e0b;font-weight:600">${fmt(b.total)}</span>
+    </div>`).join('')}
+    <div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:6px">
+      <span style="color:var(--mu);font-size:12px">ยอดบิลรวม</span><b>${fmt(total)}</b>
+    </div>
+    ${amt>0?`<div style="display:flex;justify-content:space-between;margin-top:4px">
+      <span style="color:var(--mu);font-size:12px">รับมา</span><b style="color:#34d399">${fmt(amt)}</b>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:4px">
+      <span style="color:var(--mu);font-size:12px">${diff>=0?'เงินทอน':'ขาดอีก'}</span>
+      <b style="color:${diff>=0?'#34d399':'#f87171'}">${fmt(Math.abs(diff))}</b>
+    </div>`:''}
+  </div>`;
+}
+
+function fillFromPending(id,cust,amt){
+  const custEl=document.getElementById('py_cust');
+  const amtEl=document.getElementById('py_amt');
+  if(custEl&&cust)custEl.value=cust;
+  if(amtEl&&amt>0)amtEl.value=amt;
+  previewReconcile();
+  // Remove pending record after use
+  document.getElementById('py_btn').dataset.pendingId=id;
+  toast('นำข้อมูลมาแล้ว กดยืนยันเพื่อหักลบ');
+}
+
+async function savePay(){
+  const btn=document.getElementById('py_btn');
+  const cust=document.getElementById('py_cust')?.value?.trim();
+  const amt=parseFloat(document.getElementById('py_amt')?.value||'0');
+  const date=document.getElementById('py_date')?.value;
+  const ps=document.getElementById('py_ps')?.value;
+  const pe=document.getElementById('py_pe')?.value;
+  const slip=document.getElementById('py_slip')?.value?.trim()||null;
+  const note=document.getElementById('py_note')?.value?.trim()||null;
+  const pendingId=btn?.dataset?.pendingId||null;
+  if(!cust){toast('กรุณาเลือกลูกค้า',true);return;}
+  if(!amt||amt<=0){toast('กรุณาใส่ยอดเงิน',true);return;}
+  if(btn)btn.disabled=true;syn(true);
+  try{
+    const bills=C.sales.filter(s=>s.customer===cust&&!s.paid&&s.sale_date>=ps&&s.sale_date<=pe);
+    const billIds=bills.map(b=>b.id);
+    // Save payment record
+    const{data:pay,error:pE}=await SB.from('bkp_payments').insert({
+      customer:cust,amount:amt,payment_date:date,
+      period_start:ps,period_end:pe,
+      note,slip_url:slip,
+      status:billIds.length>0?'reconciled':'pending',
+      bills_cleared:billIds,
+    }).select().single();
+    if(pE)throw pE;
+    // Mark bills as paid
+    if(billIds.length>0){
+      const{error:sE}=await SB.from('bkp_sales').update({paid:true,paid_at:td()}).in('id',billIds);
+      if(sE)throw sE;
+    }
+    // Delete the pending slip if used
+    if(pendingId){
+      await SB.from('bkp_payments').delete().eq('id',pendingId);
+    }
+    syn(false);
+    toast(`✅ บันทึกสำเร็จ! หักลบ ${billIds.length} บิล (${fmt(bills.reduce((s,b)=>s+parseFloat(b.total||0),0))})`);
+    go('pay');
+  }catch(e){
+    syn(false);serr();toast('ผิดพลาด: '+(e.message||e),true);
+    if(btn){btn.disabled=false;delete btn.dataset.pendingId;}
+  }
+}
+async function delPay(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  syn(true);await SB.from('bkp_payments').delete().eq('id',id);syn(false);toast('ลบแล้ว');go('pay');
+}
+
 /* ── EXPENSE ── */
 function rExp(){
   const tot=C.expenses.reduce((a,e)=>a+parseFloat(e.amount||0),0);
@@ -312,6 +494,7 @@ async function saveExp(){
   toast('บันทึกสำเร็จ');go('exp');
 }
 async function delExp(id){if(!confirm('ลบรายจ่ายนี้?'))return;syn(true);await SB.from('bkp_expenses').delete().eq('id',id);syn(false);go('exp');}
+
 /* ── SETTLE ── */
 function rSettle(){
   const{stf,stt}=F;const ss=inR(stf,stt);const kg=sKg(ss);const oh=C.overhead;const oht=ohS();
@@ -334,6 +517,7 @@ function rSettle(){
   return`<tr><td><span class="dot" style="background:${p.color}"></span>${p.name}</td><td>${k.toFixed(1)}</td><td>${fmt(r)}</td><td>${fmt(m)}</td><td>${fmt(v)}</td><td style="color:#34d399;font-weight:600">${fmt(r-m-v)}</td></tr>`;}).join('')}
   </table></div></div>`;
 }
+
 /* ── MARGIN ── */
 function rMargin(){
   const oht=ohS(),al=+C.overhead.alert_pct||15;
@@ -354,6 +538,7 @@ function rMargin(){
   <div style="margin-top:10px;padding:10px 14px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;display:flex;justify-content:space-between">
   <span style="color:var(--mu)">รวมทั้งหมด</span><b style="color:var(--ac2)">฿${oht}/กก.</b></div></div>`;
 }
+
 /* ── SHARE ── */
 function rShare(){
   const{shf,sht}=F;const ss=inR(shf,sht);const ex=C.expenses.filter(e=>e.expense_date>=shf&&e.expense_date<=sht);
@@ -385,6 +570,7 @@ function rShare(){
   <div style="font-size:18px;font-weight:700;color:${clrs[i]||'#94a3b8'}">${fmtD(profit*s.pct/100)}</div>
   </div>`).join('')}</div>`;
 }
+
 /* ── SETTINGS ── */
 function rSet(){
   const sumPct=C.shareholders.reduce((a,x)=>a+(+x.pct||0),0);const oh=C.overhead;
@@ -424,6 +610,7 @@ async function upOH(k,v){const{error}=await SB.from('bkp_overhead').update({[k]:
 async function upSH(id,f,v){const{error}=await SB.from('bkp_shareholders').update({[f]:parseFloat(v)||0}).eq('id',id);if(error){serr();return;}const sh=C.shareholders.find(x=>x.id===id);if(sh)sh[f]=parseFloat(v)||0;render();}
 async function addSH(){const name=prompt('ชื่อผู้ถือหุ้น:');if(!name)return;const pct=parseFloat(prompt('สัดส่วน (%):','0')||'0');const{data,error}=await SB.from('bkp_shareholders').insert({name,pct,sort_order:C.shareholders.length+1}).select().single();if(error){serr();toast('ผิดพลาด',true);return;}C.shareholders.push(data);toast('เพิ่มสำเร็จ');render();}
 async function delSH(id){if(!confirm('ลบผู้ถือหุ้นนี้?'))return;await SB.from('bkp_shareholders').delete().eq('id',id);C.shareholders=C.shareholders.filter(x=>x.id!==id);render();}
+
 /* ── INIT ── */
 document.getElementById('tdate').textContent=new Date().toLocaleDateString('th-TH',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
 (async()=>{await loadAll();mkNav();render();})();
