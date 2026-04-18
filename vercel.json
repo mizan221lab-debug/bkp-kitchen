@@ -1,5 +1,7 @@
 {
   "version": 2,
-  "builds": [{ "src": "index.html", "use": "@vercel/static" }],
-  "routes": [{ "src": "/(.*)", "dest": "/index.html" }]
+  "crons": [
+    { "path": "/api/line-cron?job=daily", "schedule": "0 13 * * *" },
+    { "path": "/api/line-cron?job=weekly", "schedule": "0 1 * * 1" }
+  ]
 }
