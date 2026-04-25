@@ -1,7 +1,1 @@
-{
-  "version": 2,
-  "crons": [
-    { "path": "/api/line-cron?job=daily", "schedule": "0 13 * * *" },
-    { "path": "/api/line-cron?job=weekly", "schedule": "0 1 * * 1" }
-  ]
-}
+{"crons":[{"path":"/api/line-cron","schedule":"0 13 * * *"}]}
