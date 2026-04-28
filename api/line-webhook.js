@@ -85,92 +85,6 @@ function exactMatch(bills, target) {
     for (let i = 0; i < limit; i++) if (mask & (1 << i)) { s += parseFloat(bills[i].total || 0); idx.push(i); }
     if (Math.abs(s - target) < 0.01) return idx;
   }
-//  BKP Kitchen LINE Webhook v2 — Phase 1-3
-//  Covers: sales, payments, expenses, PO, products, raw materials,
-//          recipes, shareholders, overhead, dividends, images,
-//          multi-step dialog, daily reports, rich-menu support
-// ════════════════════════════════════════════════════════════
-
-const SUPABASE_URL = 'https://suatxkfygvlrlsscvmoo.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1YXR4a2Z5Z3Zscmxzc2N2bW9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNzM5MjIsImV4cCI6MjA4OTc0OTkyMn0.5yBBvcYRGbrcnAftTuT08_Os3ouwSmnPiixCuOxRODA';
-const LINE_TOKEN   = 'qs64c7efuccICIPZGwLmq2Xh1eipJuFry4hXBsacnbS/jNp+40bbSgiyF01t9qCsEFYkJm6qsd677rbh+xetUrEFsYS79OPoy5EasGTFAmwiG4TaP8KGEJ/oamnup7gyvll4xjMW65u8ap+rASDMPQdB04t89/1O/w1cDnyilFU=';
-const WEB_URL      = 'https://midle-kitchen-yyv2.vercel.app';
-const STORAGE_URL  = `${SUPABASE_URL}/storage/v1`;
-
-const SB_HDR = {
-  'apikey': SUPABASE_KEY,
-  'Authorization': `Bearer ${SUPABASE_KEY}`,
-  'Content-Type': 'application/json',
-};
-
-// ════════ Supabase helpers ════════
-async function sbGet(table, q = '') {
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${q}`, { headers: SB_HDR });
-  if (!r.ok) throw new Error(await r.text());
-  return r.json();
-}
-async function sbPost(table, body) {
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-    method: 'POST',
-    headers: { ...SB_HDR, 'Prefer': 'return=representation' },
-    body: JSON.stringify(body),
-  });
-  const data = await r.json();
-  return Array.isArray(data) ? data[0] : data;
-}
-async function sbPatch(table, q, body) {
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${q}`, {
-    method: 'PATCH',
-    headers: { ...SB_HDR, 'Prefer': 'return=representation' },
-    body: JSON.stringify(body),
-  });
-  return r.json();
-}
-async function sbDelete(table, q) {
-  await fetch(`${SUPABASE_URL}/rest/v1/${table}${q}`, {
-    method: 'DELETE', headers: SB_HDR,
-  });
-}
-
-// ════════ LINE helpers ════════
-async function lineReply(replyToken, text) {
-  await fetch('https://api.line.me/v2/bot/message/reply', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${LINE_TOKEN}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ replyToken, messages: [{ type: 'text', text }] }),
-  });
-}
-async function linePush(userId, text) {
-  await fetch('https://api.line.me/v2/bot/message/push', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${LINE_TOKEN}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ to: userId, messages: [{ type: 'text', text }] }),
-  });
-}
-async function lineGetImage(messageId) {
-  const r = await fetch(`https://api-data.line.me/v2/bot/message/${messageId}/content`, {
-    headers: { 'Authorization': `Bearer ${LINE_TOKEN}` },
-  });
-  if (!r.ok) return null;
-  return r.arrayBuffer();
-}
-
-// ════════ Utilities ════════
-const fmt   = n => parseFloat(n || 0).toLocaleString('th-TH');
-const today = () => new Date(new Date().toLocaleString('en', { timeZone: 'Asia/Bangkok' })).toISOString().split('T')[0];
-const thisMonthStart = () => {
-  const d = new Date(new Date().toLocaleString('en', { timeZone: 'Asia/Bangkok' }));
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
-};
-
-// ════════ Payment matching ════════
-function exactMatch(bills, target) {
-  const limit = Math.min(bills.length, 20);
-  for (let mask = 1; mask < (1 << limit); mask++) {
-    let s = 0, idx = [];
-    for (let i = 0; i < limit; i++) if (mask & (1 << i)) { s += parseFloat(bills[i].total || 0); idx.push(i); }
-    if (Math.abs(s - target) < 0.01) return idx;
-  }
   return null;
 }
 function fifoMatch(bills, target) {
@@ -534,19 +448,19 @@ async function handleFlow(state, txt, userId, rt) {
   if (flow === 'add_rm') {
     if (step === 0) { await setState(userId, flow, 1, {}); return lineReply(rt, '📦 ชื่อวัตถุดิบ?'); }
     if (step === 1) { await setState(userId, flow, 2, { name: txt }); return lineReply(rt, `💰 ราคาต่อหน่วยของ "${txt}"?`); }
-    if (step === 2) { await setState(userId, flow, 3, { ...data, price: parseFloat(txt) }); return lineReply(rt, 'หน่วย? (เช่น kg, กก., ลัง, แพ็ก) - เพื่อใช้ kg'); }
+    if (step === 2) { await setState(userId, flow, 3, { ...data, price: parseFloat(txt) }); return lineReply(rt, 'หน่วย? (เช่น kg, กก., ลัง, แพ็ก) หรือพิมพ์ - เพื่อใช้ kg'); }
     if (step === 3) {
       const unit = txt === '-' ? 'kg' : txt;
       await sbPost('bkp_raw_materials', { name: data.name, price: data.price, unit });
       await clearState(userId);
-      return lineReply(rt, `✅ เพิ่มวัตถุดิบแล้ว\n📦 ${data.name}: ฿${fmt(data.price)}/${unit}`);
+      return lineReply(rt, `✅ เพิ่มวัตถุดิบแล้ว!\n📦 ${data.name}: ฿${fmt(data.price)}/${unit}`);
     }
   }
 
   // ── add_shareholder flow ──
   if (flow === 'add_shareholder') {
     if (step === 0) { await setState(userId, flow, 1, {}); return lineReply(rt, '👤 ชื่อผู้ถือหุ้น?'); }
-    if (step === 1) { await setState3tep === 1) { await setState(userId, flow, 2, { name: txt }); return lineReply(rt, `📊 สัดส่วนหุ้น (%) ของ "${txt}"?`); }
+    if (step === 1) { await setState(userId, flow, 2, { name: txt }); return lineReply(rt, `📊 สัดส่วนหุ้น (%) ของ "${txt}"?`); }
     if (step === 2) { await setState(userId, flow, 3, { ...data, pct: parseFloat(txt) }); return lineReply(rt, '💰 เงินลงทุน (บาท)?'); }
     if (step === 3) {
       const inv = parseFloat(txt);
@@ -667,7 +581,7 @@ async function handleText(txt, userId, rt) {
   }
 
   // ─── ค่า [รายการ] [จำนวน] [หมวด?] ───
-  const expRx = txt.match(/^ค่า\s+(.+?)\s+([\d.]+)(?:\s+(.+))?$/);
+  const expRx = txt.match(/^ค่า\s+(.+?)\s+([\d.]+)(?:\s+(.*))?$/);
   if (expRx) {
     const [, note, amount, category] = expRx;
     await sbPost('bkp_expenses', { expense_date: today(), amount: parseFloat(amount), note, category: category || null, line_user_id: userId });
@@ -755,7 +669,7 @@ async function handleText(txt, userId, rt) {
     (txt !== 'help' && txt !== 'คำสั่ง' ? `❓ ไม่เข้าใจ "${txt}"\n` : '') +
     `📱 BKP Kitchen — คำสั่งทั้งหมด\n━━━━━━━━━━━━━━\n` +
     `📦 งานประจำ:\n• สั่ง [ของ] [qty] [หน่วย] [ราคา]\n• รับของ [ของ] [qty]\n• ขาย [ลูกค้า] [ยอด]\n• รับ [ยอด] หรือ รับ [ลูกค้า] [ยอด]\n• ค่า [รายการ] [ยอด] [หมวด]\n\n` +
-    `🍱 สินค้า/วัตถุดิบ:\n• สินค้า+ [ชื่อ] [ต้นทุน] [ราคา]\n• สินค้า [ชื่อ]\n• ปรับราคา [ชื่อ] [ราคาใหม่]\n• วัตถุดิบ+ [ชื่อ] [ราคา]\n• วัตถุดิบ | ราคาวบ | ราคาวัตถุดิบ [ชื่อ] [ราคา]\n• สูตร+ [สินค้า] [วัตถุดิบ] [qty]\n• สูตร [สินค้า]\n\n` +
+    `🍱 สินค้า/วัตถุดิบ:\n• สินค้า+ [ชื่อ] [ต้นทุน] [ราคา]\n• สินค้า | สินค้า [ชื่อ]\n• ปรับราคา [ชื่อ] [ราคาใหม่]\n• วัตถุดิบ+ [ชื่อ] [ราคา]\n• วัตถุดิบ | ราคาวัตถุดิบ [ชื่อ] [ราคา]\n• สูตร+ [สินค้า] [วัตถุดิบ] [qty]\n• สูตร [สินค้า]\n\n` +
     `👥 หุ้น/การเงิน:\n• หุ้น+ [ชื่อ] [%] [เงิน] | หุ้น\n• ปรับหุ้น [ชื่อ] [%ใหม่]\n• โสหุ้ย | โสหุ้ย [หมวด] [%]\n• ปันผล [ปี] [กำไร] [ปันผล]\n• จ่ายปันผล [ชื่อ]\n\n` +
     `📊 รายงาน:\n• ยอดวันนี้ | ยอดเดือน | รายงาน YYYY-MM-DD\n• ยอดค้าง | ใบสั่ง | ลูกค้า [ชื่อ]\n\n` +
     `✏️ แก้ไข:\n• ลบค่า/ลบขาย [id]\n• แก้ขาย/แก้ค่า [id] [ยอดใหม่]\n\n` +
